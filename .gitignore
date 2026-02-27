@@ -1,0 +1,23 @@
+# Virtual environment
+venv/
+.env
+
+# Data and large files
+*.zip
+data/
+training_images/
+training_masks/
+test_images/
+test_masks/
+temp_*
+
+# Jupyter and system files
+.ipynb_checkpoints
+.DS_Store
+__pycache__/
+
+# Model weights
+*.pth
+*.h5
+runs/
+exp2_results/
