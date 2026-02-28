@@ -1,6 +1,5 @@
 # Skin Lesion Segmentation: Deep Learning with UNet
 
-![Skin Lesion Segmentation Sample](assets/test_sample.png)
 
 ## 📋 Table of Contents
 1. [Project Overview](#-project-overview)
@@ -143,4 +142,4 @@ The project includes a dedicated pipeline for user-uploaded images. This simulat
 ![Inference Sample](assets/inference_sample.png)
 
 ---
-*Developed by mastermind-zed as part of the Skin Lesion Research.*
+*Developed by mastermind-zed and Abdul Basit as part of the Skin Lesion Research.*
