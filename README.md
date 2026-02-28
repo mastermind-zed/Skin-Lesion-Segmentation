@@ -1,5 +1,6 @@
 # Skin Lesion Segmentation: Deep Learning with UNet
 
+<img src="assets/test_sample.png" width="800" alt="Skin Lesion Segmentation Sample">
 
 ## 📋 Table of Contents
 1. [Project Overview](#-project-overview)
