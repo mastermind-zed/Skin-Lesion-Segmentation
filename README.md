@@ -121,6 +121,8 @@ The chart below visualizes the model's training journey over 150 epochs.
 
 Evaluation on the **379 Test Images**:
 
+| Metric | Score | 
+| :--- | :--- |
 | **Dice Coefficient** | **86.11%** |
 | **IoU (Jaccard Index)** | **76.43%** |
 | **Pixel Accuracy** | **92.82%** |
