@@ -1,6 +1,6 @@
 # Skin Lesion Segmentation: Deep Learning with UNet
 
-![Skin Lesion Segmentation Sample](https://raw.githubusercontent.com/mastermind-zed/Skin-Lesion-Segmentation/main/visualization_sample.png)
+![Skin Lesion Segmentation Sample](assets/test_sample.png)
 
 ## 📋 Table of Contents
 1. [Project Overview](#-project-overview)
@@ -132,7 +132,7 @@ We compared standard inference against an 8-way TTA (averaging predictions from 
 ### 🔬 Test Set Predictions
 The following image shows how the model handles the test set data, accurately identifying lesion boundaries.
 
-![Test Set Sample](skin_lesion_segmentation_result_png_1772238009593.png)
+![Test Set Sample](assets/test_sample.png)
 
 ### 📤 Custom Inference (Upload a New Image)
 The project includes a dedicated pipeline for user-uploaded images. This simulates a real-world clinical application.
@@ -140,7 +140,7 @@ The project includes a dedicated pipeline for user-uploaded images. This simulat
 - **Step 2:** The system automatically resizes, normalizes, and runs the image through the UNet.
 - **Step 3:** The output includes the probability map (confidence) and the final thresholded mask.
 
-![Inference Sample](inference_sample_result_png_1772238564559.png)
+![Inference Sample](assets/inference_sample.png)
 
 ---
 *Developed by mastermind-zed as part of the Skin Lesion Research.*
