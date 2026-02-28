@@ -137,6 +137,19 @@ We compared standard inference against an 8-way TTA (averaging predictions from 
 
 ---
 
+## 📊 Model Comparison
+
+In this section, we track the performance of various architectures on the ISIC 2016 dataset to identify the most effective model for skin lesion segmentation.
+
+| Architecture | Dice Coeff | IoU | Parameters | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **Standard UNet** | **86.11%** | **76.43%** | ~1.9M | ✅ Complete |
+| **UNet++ (Nested UNet)** | *TBD* | *TBD* | ~9.1M | 🔄 Training... |
+| **Attention UNet** | - | - | - | 📅 Planned |
+| **DeepLabV3+** | - | - | - | 📅 Planned |
+
+---
+
 ## 🖼 Visualizations
 
 ### 🔬 Test Set Predictions
