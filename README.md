@@ -60,7 +60,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🏗 Model Implementation: UNet Deep Dive
+## 🏗 Model Architecture: UNet Deep Dive
 
 The model is a standard **UNet (Encoder-Decoder)** with skip connections, featuring approximately 97.9 Million parameters.
 
@@ -74,27 +74,38 @@ The model is a standard **UNet (Encoder-Decoder)** with skip connections, featur
     - The deepest level processes highly abstract features at a resolution of 32x32 with 1024 channels.
 3.  **Decoder (Upsampling):**
     - `ConvTranspose2d` doubles spatial resolution.
-    - **Skip Connections:** Concatenates feature maps from the corresponding encoder level to recover spatial information lost during pooling.
+    - **Skip Connections:** Concatenates feature maps from the corresponding encoder level to recover spatial information lost during pooling. This is key for pixel-perfect segmentation.
     - Successive Double Convolutions refine the segmentation mask.
 4.  **Final Head:**
     - A `1x1 Convolution` reduces depth to 1 channel, followed by a `Sigmoid` activation (handled by `BCEWithLogitsLoss` during training) to produce a probability map.
 
 ---
 
-## 🔄 Training Workflow
+## 🔄 The Training Regime: Step-by-Step
 
-1.  **Data Preprocessing:**
-    - Images resized to 512x512.
-    - Normalization using ImageNet statistics.
-2.  **Augmentation:**
-    - Training: Horizontal/Vertical Flips, Random Rotate, Color Jitter, Elastic Transforms.
-    - Validation: Strictly Resize and Normalize.
-3.  **Loss Function:**
-    - **Combined Loss:** `0.5 * BCEWithLogits + 0.5 * DiceLoss`. This balances pixel-wise accuracy with overall overlap.
-4.  **Learning Strategy:**
-    - **Optimizer:** AdamW.
-    - **Scheduler:** Cosine Annealing with Warm Restarts.
-    - **Mixed Precision:** AMP (Automatic Mixed Precision) for faster training on T4 GPUs.
+The training process is optimized for robustness and speed using state-of-the-art PyTorch features.
+
+### 1. Data Pipeline & Augmentation
+- **Input Scaling:** Images are resized to 512x512 with bicubic interpolation.
+- **Normalization:** Zero-centering using ImageNet mean `[0.485, 0.456, 0.406]` and std `[0.229, 0.224, 0.225]`.
+- **Albumentations Library:** Used for high-speed augmentations.
+    - `ShiftScaleRotate`: Simulates different camera angles and distances.
+    - `ElasticTransform`: Handles varied lesion shapes.
+    - `ColorJitter`: Accounts for different lighting conditions in dermatoscopy.
+
+### 2. The Loss Function: Combined Loss
+We use a weighted sum of two losses to ensure the model learns both local pixel accuracy and global region overlap:
+- **Binary Cross Entropy (BCE):** Penalizes pixel-level misclassifications.
+- **Dice Loss:** Directly optimizes for the Dice Coefficient, making the model robust to class imbalance (where the lesion is small compared to healthy skin).
+- **Formula:** `Total Loss = (1.0 * BCE) + (1.0 * DiceLoss)`
+
+### 3. Optimization Strategy
+- **Optimizer:** `AdamW` (Adam with Decoupled Weight Decay). Weight decay is set to `1e-4` to prevent overfitting.
+- **Learning Rate Scheduler:** `CosineAnnealingLR`. It starts at `1e-4` and smoothly decays following a cosine curve, helping the model settle into narrow optima.
+
+### 4. Advanced Training Features
+- **Mixed Precision (AMP):** We use `torch.cuda.amp` to perform calculations in `float16`. This halves memory usage and significantly speeds up training on the T4 GPU without loss of precision.
+- **Checkpointing:** The model automatically saves the `best_model.pth` based on the lowest validation loss recorded.
 
 ---
 
@@ -109,19 +120,27 @@ Evaluation on the **379 Test Images**:
 | **Pixel Accuracy** | **94.50%** |
 
 ### Test-Time Augmentation (TTA)
-We experimented with 8-way TTA (Flips + Rotations).
+We compared standard inference against an 8-way TTA (averaging predictions from 8 different flips/rotations).
 - **Inference with TTA:** 85.95%
 - **Standard Inference:** 86.02%
-*Observation: The model exhibits high spatial robustness, as TTA yields nearly identical (slightly lower) scores compared to standard prediction.*
+*The model's base robustness is high enough that standard inference remains the most efficient high-accuracy path.*
 
 ---
 
 ## 🖼 Visualizations
-The model successfully identifies irregular boundaries and varied lesion textures.
 
-- **Original Image:** Raw dermatoscopic data.
-- **Probability Heatmap:** Visualizes model confidence (Jet colormap).
-- **Binary Mask:** Thresholded at 0.5 for final segmentation.
+### 🔬 Test Set Predictions
+The following image shows how the model handles the test set data, accurately identifying lesion boundaries.
+
+![Test Set Sample](skin_lesion_segmentation_result_png_1772238009593.png)
+
+### 📤 Custom Inference (Upload a New Image)
+The project includes a dedicated pipeline for user-uploaded images. This simulates a real-world clinical application.
+- **Step 1:** Upload any raw dermatoscopic image.
+- **Step 2:** The system automatically resizes, normalizes, and runs the image through the UNet.
+- **Step 3:** The output includes the probability map (confidence) and the final thresholded mask.
+
+![Inference Sample](inference_sample_result_png_1772238564559.png)
 
 ---
 *Developed by mastermind-zed as part of the Skin Lesion Research.*
