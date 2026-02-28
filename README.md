@@ -109,7 +109,7 @@ We use a weighted sum of two losses to ensure the model learns both local pixel 
 ### 📈 Training Metrics & Convergence
 The chart below visualizes the model's training journey over 150 epochs. 
 
-![Training Curves](assets/training_curves.png)
+<img src="assets/training_curves.png" width="800" alt="Training Curves">
 
 **Key Observations from the Plot:**
 - **Loss Convergence:** Both training and validation losses show a smooth, steady decline, indicating a well-tuned learning rate and effective regularization.
@@ -141,7 +141,7 @@ We compared standard inference against an 8-way TTA (averaging predictions from 
 ### 🔬 Test Set Predictions
 The following image shows how the model handles the test set data, accurately identifying lesion boundaries.
 
-![Test Set Sample](assets/test_sample.png)
+<img src="assets/test_sample.png" width="600" alt="Test Set Sample">
 
 ### 📤 Custom Inference (Upload a New Image)
 The project includes a dedicated pipeline for user-uploaded images. This simulates a real-world clinical application.
@@ -149,12 +149,12 @@ The project includes a dedicated pipeline for user-uploaded images. This simulat
 - **Step 2:** The system automatically resizes, normalizes, and runs the image through the UNet.
 - **Step 3:** The output includes the probability map (confidence) and the final thresholded mask.
 
-![Inference Sample](assets/inference_sample.png)
+<img src="assets/inference_sample.png" width="600" alt="Inference Sample">
 
 ### 🔬 Final Evaluation (Test Set Results)
 The model's segmentation capability is further demonstrated in the grid below, showcasing consistent performance across various lesion types in the test set.
 
-![Test Results Grid](assets/test_results.webp)
+<img src="assets/test_results.webp" width="800" alt="Test Results Grid">
 
 ---
 *Developed by mastermind-zed as part of the Skin Lesion Research.*
