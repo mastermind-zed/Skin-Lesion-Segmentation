@@ -141,5 +141,10 @@ The project includes a dedicated pipeline for user-uploaded images. This simulat
 
 ![Inference Sample](assets/inference_sample.png)
 
+### 🔬 Final Evaluation (Test Set Results)
+The model's segmentation capability is further demonstrated in the grid below, showcasing consistent performance across various lesion types in the test set.
+
+![Test Results Grid](assets/test_results.webp)
+
 ---
-*Developed by mastermind-zed and Abdul Basit as part of the Skin Lesion Research.*
+*Developed by mastermind-zed as part of the Skin Lesion Research.*
