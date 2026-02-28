@@ -15,8 +15,8 @@
 This project focuses on the automated segmentation of skin lesions from dermatoscopic images using a **UNet Architecture**. High-accuracy segmentation is critical for early detection of melanoma and other skin cancers.
 
 **Key Achievements:**
-- **Dice Coefficient:** 86.02%
-- **IoU (Jaccard Index):** 77.79%
+- **Dice Coefficient:** 86.11%
+- **IoU (Jaccard Index):** 76.43%
 - **Environment:** Seamless integration with Google Colab (High-Performance A100 GPU).
 
 ---
@@ -121,16 +121,16 @@ The chart below visualizes the model's training journey over 150 epochs.
 
 Evaluation on the **379 Test Images**:
 
-| Metric | Score | 
-| :--- | :--- |
-| **Dice Coefficient** | **86.02%** |
-| **IoU (Jaccard Index)** | **77.79%** |
-| **Pixel Accuracy** | **94.50%** |
+| **Dice Coefficient** | **86.11%** |
+| **IoU (Jaccard Index)** | **76.43%** |
+| **Pixel Accuracy** | **92.82%** |
+| **Precision** | **88.68%** |
+| **Recall** | **85.43%** |
 
 ### Test-Time Augmentation (TTA)
 We compared standard inference against an 8-way TTA (averaging predictions from 8 different flips/rotations).
 - **Inference with TTA:** 85.95%
-- **Standard Inference:** 86.02%
+- **Standard Inference:** 86.11%
 *The model's base robustness is high enough that standard inference remains the most efficient high-accuracy path.*
 
 ---
