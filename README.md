@@ -106,6 +106,16 @@ We use a weighted sum of two losses to ensure the model learns both local pixel 
 - **Mixed Precision (AMP):** We use `torch.cuda.amp` to perform calculations in `float16`. This halves memory usage and significantly speeds up training on high-end hardware like the NVIDIA A100 without loss of precision.
 - **Checkpointing:** The model automatically saves the `best_model.pth` based on the lowest validation loss recorded.
 
+### 📈 Training Metrics & Convergence
+The chart below visualizes the model's training journey over 150 epochs. 
+
+![Training Curves](assets/training_curves.png)
+
+**Key Observations from the Plot:**
+- **Loss Convergence:** Both training and validation losses show a smooth, steady decline, indicating a well-tuned learning rate and effective regularization.
+- **Dice Coefficient & IoU:** There is a consistent upward trend in these segmentation metrics. The validation curve follows the training curve closely, demonstrating that the model generalizes exceptionally well to unseen data with minimal overfitting.
+- **Learning Rate Schedule:** The impact of the Cosine Annealing scheduler is visible in the stability of the final convergence, where the model settled into a high-performance local optimum.
+
 ---
 
 ## 📊 Results & Evaluation
