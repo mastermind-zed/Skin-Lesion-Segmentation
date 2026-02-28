@@ -19,7 +19,7 @@ This project focuses on the automated segmentation of skin lesions from dermatos
 **Key Achievements:**
 - **Dice Coefficient:** 86.02%
 - **IoU (Jaccard Index):** 77.79%
-- **Environment:** Seamless integration with Google Colab (T4 GPU).
+- **Environment:** Seamless integration with Google Colab (High-Performance A100 GPU).
 
 ---
 
@@ -104,7 +104,7 @@ We use a weighted sum of two losses to ensure the model learns both local pixel 
 - **Learning Rate Scheduler:** `CosineAnnealingLR`. It starts at `1e-4` and smoothly decays following a cosine curve, helping the model settle into narrow optima.
 
 ### 4. Advanced Training Features
-- **Mixed Precision (AMP):** We use `torch.cuda.amp` to perform calculations in `float16`. This halves memory usage and significantly speeds up training on the T4 GPU without loss of precision.
+- **Mixed Precision (AMP):** We use `torch.cuda.amp` to perform calculations in `float16`. This halves memory usage and significantly speeds up training on high-end hardware like the NVIDIA A100 without loss of precision.
 - **Checkpointing:** The model automatically saves the `best_model.pth` based on the lowest validation loss recorded.
 
 ---
