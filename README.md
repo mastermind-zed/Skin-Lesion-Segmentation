@@ -129,6 +129,9 @@ Evaluation on the **379 Test Images**:
 | **Precision** | 88.68% | **90.91%** |
 | **Recall** | 85.43% | **88.37%** |
 
+> [!NOTE]
+> **Standard UNet Performance:** As the primary model, the Standard UNet delivers a robust **86.11% Dice score**. It serves as the project's foundational baseline, demonstrating high reliability and consistent segmentation across the ISIC 2016 test set.
+
 ### Test-Time Augmentation (TTA)
 We compared standard inference against an 8-way TTA (averaging predictions from 8 different flips/rotations).
 - **Inference with TTA:** 85.95%
@@ -143,7 +146,7 @@ In this section, we track the performance of various architectures on the ISIC 2
 
 | Architecture | Dice Coeff | IoU | Parameters | Performance |
 | :--- | :--- | :--- | :--- | :--- |
-| **Standard UNet** (f=64) [Primary] | 86.11% | 76.43% | **28,948,673** | - |
+| **Standard UNet** (f=64) [Primary] | 86.11% | 76.43% | **28,948,673** | Foundational Baseline |
 | **UNet++ (Nested)** (f=32) | **89.07%** | **80.94%** | **9.1M** | 🚀 **3x Smaller & +3% Better** |
 | Attention UNet | - | - | - | 📅 Planned |
 | DeepLabV3+ | - | - | - | 📅 Planned |
@@ -152,11 +155,12 @@ In this section, we track the performance of various architectures on the ISIC 2
 
 ## 📈 Performance Statement Comparison
 
-The comparative analysis reveals a significant architectural advantage for the **UNet++** variant in the context of skin lesion segmentation:
+The comparative analysis reveals a significant architectural advantage for the **UNet++** variant, while establishing the **Standard UNet** as the robust foundation for the project:
 
-1.  **Efficiency vs. Scale:** The **Standard UNet** (Primary Model) utilizes a massive **28.9M parameters** to achieve a solid 86.11% Dice score. In contrast, the **UNet++** (Nested) achieves a superior **89.07%** using only **9.1M parameters**. This makes UNet++ **3.16x more parameter-efficient**.
-2.  **Boundary Precision:** Visual analysis of the probability maps indicates that the Nested skip connections in UNet++ reduce semantic gaps, leading to sharper boundaries and higher IoU (+4.51% gain).
-3.  **Benchmark Leader:** While the Standard UNet remains the project's foundational architecture, UNet++ currently stands as the performance leader for precision-critical dermatoscopic analysis.
+1.  **Standard UNet (Primary):** Featuring **28,948,673 parameters**, this model provides a reliable and high-performance baseline. It demonstrates excellent stability and sets a benchmark that surpasses many early segmentation architectures.
+2.  **Efficiency vs. Scale:** While the Standard UNet uses 28.9M parameters to achieve its 86.11% Dice score, the **UNet++** (Nested) achieves a superior **89.07%** using only **9.1M parameters**. This makes UNet++ **3.16x more parameter-efficient**.
+3.  **Boundary Precision:** Visual analysis indicates that the Nested skip connections in UNet++ reduce semantic gaps compared to the Standard UNet, leading to sharper boundaries and higher IoU (+4.51% gain).
+4.  **Benchmark Leader:** The Standard UNet remains the project's foundational architecture, while UNet++ currently stands as the performance leader for precision-critical dermatoscopic analysis.
 
 ---
 
