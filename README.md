@@ -12,7 +12,7 @@
 ---
 
 ## 🔬 Project Overview
-This project focuses on the automated segmentation of skin lesions from dermatoscopic images using a **UNet Architecture**. High-accuracy segmentation is critical for early detection of melanoma and other skin cancers.
+This project focuses on the automated segmentation of skin lesions from dermatoscopic images using a **Standard UNet Architecture (Primary Model)**. High-accuracy segmentation is critical for early detection of melanoma and other skin cancers.
 
 **Key Achievements:**
 - **Dice Coefficient:** 86.11%
@@ -143,10 +143,20 @@ In this section, we track the performance of various architectures on the ISIC 2
 
 | Architecture | Dice Coeff | IoU | Parameters | Performance |
 | :--- | :--- | :--- | :--- | :--- |
-| **Standard UNet** (f=64) | 86.11% | 76.43% | **28,948,673** | - |
+| **Standard UNet** (f=64) [Primary] | 86.11% | 76.43% | **28,948,673** | - |
 | **UNet++ (Nested)** (f=32) | **89.07%** | **80.94%** | **9.1M** | 🚀 **3x Smaller & +3% Better** |
 | Attention UNet | - | - | - | 📅 Planned |
 | DeepLabV3+ | - | - | - | 📅 Planned |
+
+---
+
+## 📈 Performance Statement Comparison
+
+The comparative analysis reveals a significant architectural advantage for the **UNet++** variant in the context of skin lesion segmentation:
+
+1.  **Efficiency vs. Scale:** The **Standard UNet** (Primary Model) utilizes a massive **28.9M parameters** to achieve a solid 86.11% Dice score. In contrast, the **UNet++** (Nested) achieves a superior **89.07%** using only **9.1M parameters**. This makes UNet++ **3.16x more parameter-efficient**.
+2.  **Boundary Precision:** Visual analysis of the probability maps indicates that the Nested skip connections in UNet++ reduce semantic gaps, leading to sharper boundaries and higher IoU (+4.51% gain).
+3.  **Benchmark Leader:** While the Standard UNet remains the project's foundational architecture, UNet++ currently stands as the performance leader for precision-critical dermatoscopic analysis.
 
 ---
 
