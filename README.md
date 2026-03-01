@@ -121,13 +121,13 @@ The chart below visualizes the model's training journey over 150 epochs.
 
 Evaluation on the **379 Test Images**:
 
-| Metric | Score | 
-| :--- | :--- |
-| **Dice Coefficient** | **86.11%** |
-| **IoU (Jaccard Index)** | **76.43%** |
-| **Pixel Accuracy** | **92.82%** |
-| **Precision** | **88.68%** |
-| **Recall** | **85.43%** |
+| Metric | Standard UNet | **UNet++** | 
+| :--- | :--- | :--- |
+| **Dice Coefficient** | 86.11% | **89.07%** |
+| **IoU (Jaccard Index)** | 76.43% | **80.94%** |
+| **Pixel Accuracy** | 92.82% | **94.23%** |
+| **Precision** | 88.68% | **90.91%** |
+| **Recall** | 85.43% | **88.37%** |
 
 ### Test-Time Augmentation (TTA)
 We compared standard inference against an 8-way TTA (averaging predictions from 8 different flips/rotations).
