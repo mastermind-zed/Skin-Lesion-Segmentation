@@ -144,7 +144,7 @@ In this section, we track the performance of various architectures on the ISIC 2
 | Architecture | Dice Coeff | IoU | Parameters | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **Standard UNet** | **86.11%** | **76.43%** | ~1.9M | ✅ Complete |
-| **UNet++ (Nested UNet)** | *TBD* | *TBD* | ~9.1M | 🔄 Training... |
+| **UNet++ (Nested UNet)** | **89.07%** | **80.94%** | ~9.1M | ✅ Complete |
 | **Attention UNet** | - | - | - | 📅 Planned |
 | **DeepLabV3+** | - | - | - | 📅 Planned |
 
