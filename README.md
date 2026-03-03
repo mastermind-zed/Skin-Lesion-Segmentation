@@ -133,6 +133,9 @@ Evaluation on the **379 Test Images**:
 > **Attention UNet Performance:** The Attention UNet achieved a **85.99% Dice score**, performing similarly to the Standard UNet baseline. While the Attention Gates help focus on saliency, the nested architecture of UNet++ remains the most effective for this dataset.
 
 > [!NOTE]
+> **UNet++ Performance:** Achieving the highest score of **89.07% Dice**, the UNet++ (Nested UNet) is the star performer of this project. Its nested skip connections significantly reduce semantic gaps, and it achieves this with just **9.1M parameters**, making it remarkably efficient.
+
+> [!NOTE]
 > **Standard UNet Performance:** As the primary model, the Standard UNet delivers a robust **86.11% Dice score**. It serves as the project's foundational baseline, demonstrating high reliability and consistent segmentation across the ISIC 2016 test set.
 
 ### Test-Time Augmentation (TTA)
