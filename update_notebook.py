@@ -1,0 +1,248 @@
+import json
+import os
+
+nb_path = 'Skin Lesion Project.ipynb'
+if not os.path.exists(nb_path):
+    print(f"Error: {nb_path} not found")
+    exit()
+
+with open(nb_path, 'r', encoding='utf-8') as f:
+    nb = json.load(f)
+
+# --- Attention UNet Implementation ---
+attention_unet_source = [
+    "\n",
+    "class AttentionGate(nn.Module):\n",
+    "    \"\"\"Attention Gate for skip connections\"\"\"\n",
+    "    def __init__(self, F_g, F_l, F_int):\n",
+    "        super().__init__()\n",
+    "        self.W_g = nn.Sequential(\n",
+    "            nn.Conv2d(F_g, F_int, kernel_size=1, stride=1, padding=0, bias=True),\n",
+    "            nn.BatchNorm2d(F_int)\n",
+    "        )\n",
+    "        self.W_x = nn.Sequential(\n",
+    "            nn.Conv2d(F_l, F_int, kernel_size=1, stride=1, padding=0, bias=True),\n",
+    "            nn.BatchNorm2d(F_int)\n",
+    "        )\n",
+    "        self.psi = nn.Sequential(\n",
+    "            nn.Conv2d(F_int, 1, kernel_size=1, stride=1, padding=0, bias=True),\n",
+    "            nn.BatchNorm2d(1),\n",
+    "            nn.Sigmoid()\n",
+    "        )\n",
+    "        self.relu = nn.ReLU(inplace=True)\n",
+    "\n",
+    "    def forward(self, g, x):\n",
+    "        g1 = self.W_g(g)\n",
+    "        x1 = self.W_x(x)\n",
+    "        psi = self.relu(g1 + x1)\n",
+    "        psi = self.psi(psi)\n",
+    "        return x * psi\n",
+    "\n",
+    "\n",
+    "class AttentionUNet(nn.Module):\n",
+    "    \"\"\"Attention UNet Architecture\"\"\"\n",
+    "    def __init__(self, in_channels=3, out_channels=1, init_features=64, dropout=0.0):\n",
+    "        super().__init__()\n",
+    "        nb_filter = [init_features, init_features*2, init_features*4, init_features*8, init_features*16]\n",
+    "\n",
+    "        self.pool = nn.MaxPool2d(2, 2)\n",
+    "        self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)\n",
+    "\n",
+    "        self.conv0_0 = DoubleConv(in_channels, nb_filter[0], dropout=dropout)\n",
+    "        self.conv1_0 = DoubleConv(nb_filter[0], nb_filter[1], dropout=dropout)\n",
+    "        self.conv2_0 = DoubleConv(nb_filter[1], nb_filter[2], dropout=dropout)\n",
+    "        self.conv3_0 = DoubleConv(nb_filter[2], nb_filter[3], dropout=dropout)\n",
+    "        self.conv4_0 = DoubleConv(nb_filter[3], nb_filter[4], dropout=dropout)\n",
+    "\n",
+    "        self.up1 = nn.Conv2d(nb_filter[4], nb_filter[3], kernel_size=1)\n",
+    "        self.att1 = AttentionGate(F_g=nb_filter[3], F_l=nb_filter[3], F_int=nb_filter[3]//2)\n",
+    "        self.conv1_1 = DoubleConv(nb_filter[4], nb_filter[3], dropout=dropout)\n",
+    "\n",
+    "        self.up2 = nn.Conv2d(nb_filter[3], nb_filter[2], kernel_size=1)\n",
+    "        self.att2 = AttentionGate(F_g=nb_filter[2], F_l=nb_filter[2], F_int=nb_filter[2]//2)\n",
+    "        self.conv2_1 = DoubleConv(nb_filter[3], nb_filter[2], dropout=dropout)\n",
+    "\n",
+    "        self.up3 = nn.Conv2d(nb_filter[2], nb_filter[1], kernel_size=1)\n",
+    "        self.att3 = AttentionGate(F_g=nb_filter[1], F_l=nb_filter[1], F_int=nb_filter[1]//2)\n",
+    "        self.conv3_1 = DoubleConv(nb_filter[2], nb_filter[1], dropout=dropout)\n",
+    "\n",
+    "        self.up4 = nn.Conv2d(nb_filter[1], nb_filter[0], kernel_size=1)\n",
+    "        self.att4 = AttentionGate(F_g=nb_filter[0], F_l=nb_filter[0], F_int=nb_filter[0]//2)\n",
+    "        self.conv4_1 = DoubleConv(nb_filter[1], nb_filter[0], dropout=dropout)\n",
+    "\n",
+    "        self.final = nn.Conv2d(nb_filter[0], out_channels, kernel_size=1)\n",
+    "\n",
+    "    def forward(self, x):\n",
+    "        x0_0 = self.conv0_0(x)\n",
+    "        x1_0 = self.conv1_0(self.pool(x0_0))\n",
+    "        x2_0 = self.conv2_0(self.pool(x1_0))\n",
+    "        x3_0 = self.conv3_0(self.pool(x2_0))\n",
+    "        x4_0 = self.conv4_0(self.pool(x3_0))\n",
+    "\n",
+    "        g1 = self.up(x4_0)\n",
+    "        g1 = self.up1(g1)\n",
+    "        x3_0 = self.att1(g=g1, x=x3_0)\n",
+    "        d1 = torch.cat((x3_0, g1), dim=1)\n",
+    "        d1 = self.conv1_1(d1)\n",
+    "\n",
+    "        g2 = self.up(d1)\n",
+    "        g2 = self.up2(g2)\n",
+    "        x2_0 = self.att2(g=g2, x=x2_0)\n",
+    "        d2 = torch.cat((x2_0, g2), dim=1)\n",
+    "        d2 = self.conv2_1(d2)\n",
+    "\n",
+    "        g3 = self.up(d2)\n",
+    "        g3 = self.up3(g3)\n",
+    "        x1_0 = self.att3(g=g3, x=x1_0)\n",
+    "        d3 = torch.cat((x1_0, g3), dim=1)\n",
+    "        d3 = self.conv3_1(d3)\n",
+    "\n",
+    "        g4 = self.up(d3)\n",
+    "        g4 = self.up4(g4)\n",
+    "        x0_0 = self.att4(g=g4, x=x0_0)\n",
+    "        d4 = torch.cat((x0_0, g4), dim=1)\n",
+    "        d4 = self.conv4_1(d4)\n",
+    "\n",
+    "        return self.final(d4)\n"
+]
+
+# --- Model Initialization Cell Update ---
+model_init_source = [
+    "if config['model_type'] == 'UNetPlusPlus':\n",
+    "    model = UNetPlusPlus(in_channels=config['in_channels'], out_channels=config['out_channels'], init_features=config['init_features'], deep_supervision=config['deep_supervision'])\n",
+    "elif config['model_type'] == 'AttentionUNet':\n",
+    "    model = AttentionUNet(in_channels=config['in_channels'], out_channels=config['out_channels'], init_features=config['init_features'], dropout=config['dropout'])\n",
+    "else:\n",
+    "    model = UNet(in_channels=config['in_channels'], out_channels=config['out_channels'], init_features=config['init_features'], dropout=config['dropout'])\n",
+    "\n",
+    "model = model.to(device)\n",
+    "total_params = sum(p.numel() for p in model.parameters())\n",
+    "print(f\"{config['model_type']} created with {total_params:,} parameters\")\n",
+    "\n",
+    "# Test forward pass\n",
+    "x = torch.randn(1, config['in_channels'], config['image_size'][0], config['image_size'][1]).to(device)\n",
+    "with torch.no_grad():\n",
+    "    y = model(x)\n",
+    "    if isinstance(y, list): y = y[-1]\n",
+    "print(f\"Input: {x.shape} \u2192 Output: {y.shape}\")\n",
+    "print(\"\u2713 Model working!\")\n"
+]
+
+# --- Training Loop Restore ---
+training_loop_source = [
+    "# Main training loop\n",
+    "best_val_loss = float('inf')\n",
+    "patience_counter = 0\n",
+    "\n",
+    "print(\"Starting training...\")\n",
+    "print(\"=\"*60)\n",
+    "\n",
+    "for epoch in range(config['num_epochs']):\n",
+    "    print(f\"\\nEpoch {epoch+1}/{config['num_epochs']}\")\n",
+    "\n",
+    "    # Train\n",
+    "    train_loss, train_metrics = train_epoch(\n",
+    "        model, train_loader, criterion, optimizer, scaler, device, config\n",
+    "    )\n",
+    "\n",
+    "    # Validate\n",
+    "    val_loss, val_metrics = validate(\n",
+    "        model, val_loader, criterion, device, config\n",
+    "    )\n",
+    "\n",
+    "    # Update scheduler\n",
+    "    scheduler.step()\n",
+    "    current_lr = optimizer.param_groups[0]['lr']\n",
+    "\n",
+    "    # Log to TensorBoard\n",
+    "    writer.add_scalar('Loss/train', train_loss, epoch)\n",
+    "    writer.add_scalar('Loss/val', val_loss, epoch)\n",
+    "    writer.add_scalar('Dice/train', train_metrics['dice_coefficient'], epoch)\n",
+    "    writer.add_scalar('Dice/val', val_metrics['dice_coefficient'], epoch)\n",
+    "    writer.add_scalar('IoU/train', train_metrics['iou'], epoch)\n",
+    "    writer.add_scalar('IoU/val', val_metrics['iou'], epoch)\n",
+    "    writer.add_scalar('LR', current_lr, epoch)\n",
+    "\n",
+    "    # Print metrics\n",
+    "    print(f\"LR: {current_lr:.6f}\")\n",
+    "    print(f\"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}\")\n",
+    "    print(f\"Train Dice: {train_metrics['dice_coefficient']:.4f} | Val Dice: {val_metrics['dice_coefficient']:.4f}\")\n",
+    "    print(f\"Train IoU: {train_metrics['iou']:.4f} | Val IoU: {val_metrics['iou']:.4f}\")\n",
+    "\n",
+    "    # Save best model with dynamic path\n",
+    "    if val_loss < best_val_loss:\n",
+    "        best_val_loss = val_loss\n",
+    "        model_type = config['model_type']\n",
+    "        torch.save({\n",
+    "            'epoch': epoch,\n",
+    "            'model_state_dict': model.state_dict(),\n",
+    "            'optimizer_state_dict': optimizer.state_dict(),\n",
+    "            'val_loss': val_loss,\n",
+    "            'metrics': val_metrics,\n",
+    "        }, f'/content/best_model_{model_type}.pth')\n",
+    "        print(f\"\u2713 Saved best model (val_loss: {val_loss:.4f})\")\n",
+    "        patience_counter = 0\n",
+    "    else:\n",
+    "        patience_counter += 1\n",
+    "\n",
+    "    # Early stopping\n",
+    "    if patience_counter >= config['patience']:\n",
+    "        print(f\"\\nEarly stopping at epoch {epoch+1}\")\n",
+    "        break\n",
+    "\n",
+    "print(\"\\n\" + \"=\"*60)\n",
+    "print(\"Training complete!\")\n",
+    "print(f\"Best validation loss: {best_val_loss:.4f}\")\n",
+    "writer.close()"
+]
+
+new_cells = []
+for cell in nb['cells']:
+    source_text = "".join(cell['source'])
+    
+    # 1. Update Config to AttentionUNet
+    if "'model_type': 'UNetPlusPlus'" in source_text or "'model_type': 'UNet'" in source_text:
+        cell['source'] = [line.replace("'model_type': 'UNetPlusPlus'", "'model_type': 'AttentionUNet'").replace("'model_type': 'UNet'", "'model_type': 'AttentionUNet'") for line in cell['source']]
+        source_text = "".join(cell['source'])
+
+    # 2. Inject Attention UNet classes into Model Definition Cell
+    if "class UNetPlusPlus" in source_text:
+        # Check if already injected
+        if "class AttentionUNet" not in source_text:
+            cell['source'].extend(attention_unet_source)
+        source_text = "".join(cell['source'])
+
+    # 3. Handle model initialization cell (factory)
+    if "id\": \"YnLVeZGvva0r" in str(cell.get('metadata', {})): # Identifying the initialization cell by ID
+        cell['source'] = model_init_source
+        source_text = "".join(cell['source'])
+
+    # 4. Fix syntax in persistence/loading cells (already done but safeguard)
+    if 'config["model_type"]' in source_text:
+         cell['source'] = [line.replace('config["model_type"]', "config['model_type']") for line in cell['source']]
+
+    # 5. Restore Training Loop if missing (safeguard)
+    if "print(\"Training functions ready!\")" in source_text:
+        new_cells.append(cell)
+        if not any("# Main training loop" in "".join(c['source']) for c in new_cells):
+            new_cells.append({
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {"id": "final_training_loop"},
+                "outputs": [],
+                "source": training_loop_source
+            })
+        continue
+
+    # Skip old training loops
+    if "# Main training loop" in source_text and "best_val_loss" in source_text:
+        continue
+    
+    new_cells.append(cell)
+
+nb['cells'] = new_cells
+
+with open(nb_path, 'w', encoding='utf-8') as f:
+    json.dump(nb, f, indent=1)
+
+print("Notebook updated for Attention UNet implementation!")
