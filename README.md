@@ -17,7 +17,7 @@ This project focuses on the automated segmentation of skin lesions from dermatos
 **Key Achievements:**
 - **Dice Coefficient:** 86.11%
 - **IoU (Jaccard Index):** 76.43%
-- **Environment:** Seamless integration with Google Colab (High-Performance A100 GPU).m
+- **Environment:** Seamless integration with Google Colab (High-Performance A100 GPU).
 
 ---
 
