@@ -154,7 +154,7 @@ In this section, we track the performance of various architectures on the ISIC 2
 | :--- | :--- | :--- | :--- | :--- |
 | **Standard UNet** (f=64) [Primary] | 86.11% | 76.43% | **28,948,673** | Foundational Baseline |
 | **UNet++ (Nested)** (f=32) | **89.07%** | **80.94%** | **9.1M** | ✅ Highest Accuracy (Winner) |
-| **Attention UNet** (f=64) | 85.99% | 76.31% | ~30M | ✅ High Saliency Focus |
+| **Attention UNet** (f=64) | 85.99% | 76.31% | **29,298,538** | ✅ High Saliency Focus |
 | DeepLabV3+ | - | - | - | 📅 Planned |
 
 ---
