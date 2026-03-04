@@ -106,6 +106,90 @@ attention_unet_source = [
     "        return self.final(d4)\n"
 ]
 
+# --- DeepLabV3+ Implementation ---
+deeplabv3plus_source = [
+    "\n",
+    "class ASPPModule(nn.Module):\n",
+    "    def __init__(self, in_channels, out_channels, rates):\n",
+    "        super().__init__()\n",
+    "        self.stages = nn.ModuleList([\n",
+    "            nn.Sequential(nn.Conv2d(in_channels, out_channels, 1, bias=False), nn.BatchNorm2d(out_channels), nn.ReLU(inplace=True)),\n",
+    "            nn.Sequential(nn.Conv2d(in_channels, out_channels, 3, padding=rates[0], dilation=rates[0], bias=False), nn.BatchNorm2d(out_channels), nn.ReLU(inplace=True)),\n",
+    "            nn.Sequential(nn.Conv2d(in_channels, out_channels, 3, padding=rates[1], dilation=rates[1], bias=False), nn.BatchNorm2d(out_channels), nn.ReLU(inplace=True)),\n",
+    "            nn.Sequential(nn.Conv2d(in_channels, out_channels, 3, padding=rates[2], dilation=rates[2], bias=False), nn.BatchNorm2d(out_channels), nn.ReLU(inplace=True)),\n",
+    "            nn.Sequential(nn.AdaptiveAvgPool2d(1), nn.Conv2d(in_channels, out_channels, 1, bias=False), nn.BatchNorm2d(out_channels), nn.ReLU(inplace=True))\n",
+    "        ])\n",
+    "        self.bottleneck = nn.Sequential(\n",
+    "            nn.Conv2d(out_channels * 5, out_channels, 1, bias=False),\n",
+    "            nn.BatchNorm2d(out_channels),\n",
+    "            nn.ReLU(inplace=True),\n",
+    "            nn.Dropout(0.5)\n",
+    "        )\n",
+    "\n",
+    "    def forward(self, x):\n",
+    "        res = []\n",
+    "        for stage in self.stages:\n",
+    "            if isinstance(stage[-2], nn.Conv2d) and stage[-2].kernel_size == (1, 1) and not isinstance(stage[0], nn.AdaptiveAvgPool2d):\n",
+    "                res.append(stage(x))\n",
+    "            elif isinstance(stage[0], nn.AdaptiveAvgPool2d):\n",
+    "                img_size = x.size()[2:]\n",
+    "                res.append(F.interpolate(stage(x), size=img_size, mode='bilinear', align_corners=True))\n",
+    "            else:\n",
+    "                res.append(stage(x))\n",
+    "        return self.bottleneck(torch.cat(res, dim=1))\n",
+    "\n",
+    "class DeepLabV3Plus(nn.Module):\n",
+    "    def __init__(self, in_channels=3, out_channels=1, init_features=64):\n",
+    "        super().__init__()\n",
+    "        # Simple Encoder (using components similar to UNet for consistency)\n",
+    "        self.enc1 = DoubleConv(in_channels, init_features)\n",
+    "        self.enc2 = Down(init_features, init_features * 2)\n",
+    "        self.enc3 = Down(init_features * 2, init_features * 4)\n",
+    "        self.enc4 = Down(init_features * 4, init_features * 8)\n",
+    "        \n",
+    "        self.aspp = ASPPModule(init_features * 8, 256, rates=[6, 12, 18])\n",
+    "        \n",
+    "        # Decoder\n",
+    "        self.up = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)\n",
+    "        self.shortcut_conv = nn.Sequential(\n",
+    "            nn.Conv2d(init_features, 48, 1, bias=False),\n",
+    "            nn.BatchNorm2d(48),\n",
+    "            nn.ReLU(inplace=True)\n",
+    "        )\n",
+    "        self.cat_conv = nn.Sequential(\n",
+    "            nn.Conv2d(256 + 48, 256, 3, padding=1, bias=False),\n",
+    "            nn.BatchNorm2d(256),\n",
+    "            nn.ReLU(inplace=True),\n",
+    "            nn.Dropout(0.5),\n",
+    "            nn.Conv2d(256, 256, 3, padding=1, bias=False),\n",
+    "            nn.BatchNorm2d(256),\n",
+    "            nn.ReLU(inplace=True),\n",
+    "            nn.Dropout(0.1)\n",
+    "        )\n",
+    "        self.final_conv = nn.Conv2d(256, out_channels, 1)\n",
+    "\n",
+    "    def forward(self, x):\n",
+    "        x1 = self.enc1(x) # Low-level features\n",
+    "        x2 = self.enc2(x1)\n",
+    "        x3 = self.enc3(x2)\n",
+    "        x4 = self.enc4(x3)\n",
+    "        \n",
+    "        aspp_out = self.aspp(x4)\n",
+    "        aspp_out = self.up(aspp_out)\n",
+    "        \n",
+    "        shortcut = self.shortcut_conv(x1)\n",
+    "        \n",
+    "        # Handle slight size mismatches if input is not multiple of 16\n",
+    "        if aspp_out.size()[2:] != shortcut.size()[2:]:\n",
+    "            aspp_out = F.interpolate(aspp_out, size=shortcut.size()[2:], mode='bilinear', align_corners=True)\n",
+    "            \n",
+    "        x = torch.cat([aspp_out, shortcut], dim=1)\n",
+    "        x = self.cat_conv(x)\n",
+    "        x = self.final_conv(x)\n",
+    "        \n",
+    "        return F.interpolate(x, size=image_size, mode='bilinear', align_corners=True) if 'image_size' in globals() else x\n"
+]
+
 # --- Model Initialization Cell Update ---
 model_init_source = [
     "# Initialize model, loss, optimizer\n",
@@ -127,6 +211,13 @@ model_init_source = [
     "        out_channels=config['out_channels'],\n",
     "        init_features=config['init_features'],\n",
     "        dropout=config['dropout']\n",
+    "    )\n",
+    "elif config.get('model_type') == 'DeepLabV3Plus':\n",
+    "    # NOTE: DeepLabV3+ uses ASPP and a refined decoder for multi-scale context.\n",
+    "    model = DeepLabV3Plus(\n",
+    "        in_channels=config['in_channels'],\n",
+    "        out_channels=config['out_channels'],\n",
+    "        init_features=config['init_features']\n",
     "    )\n",
     "else:\n",
     "    # NOTE: Standard UNet is our robust primary baseline model (86.11% Dice).\n",
@@ -229,16 +320,18 @@ new_cells = []
 for cell in nb['cells']:
     source_text = "".join(cell['source'])
     
-    # 1. Update Config to AttentionUNet
-    if "'model_type': 'UNetPlusPlus'" in source_text or "'model_type': 'UNet'" in source_text:
-        cell['source'] = [line.replace("'model_type': 'UNetPlusPlus'", "'model_type': 'AttentionUNet'").replace("'model_type': 'UNet'", "'model_type': 'AttentionUNet'") for line in cell['source']]
+    # 1. Update Config to DeepLabV3Plus
+    if "'model_type': 'AttentionUNet'" in source_text or "'model_type': 'UNetPlusPlus'" in source_text or "'model_type': 'UNet'" in source_text:
+        cell['source'] = [line.replace("'model_type': 'AttentionUNet'", "'model_type': 'DeepLabV3Plus'").replace("'model_type': 'UNetPlusPlus'", "'model_type': 'DeepLabV3Plus'").replace("'model_type': 'UNet'", "'model_type': 'DeepLabV3Plus'") for line in cell['source']]
         source_text = "".join(cell['source'])
 
-    # 2. Inject Attention UNet classes into Model Definition Cell
+    # 2. Inject Attention UNet and DeepLabV3+ classes into Model Definition Cell
     if "class UNetPlusPlus" in source_text:
         # Check if already injected
         if "class AttentionUNet" not in source_text:
             cell['source'].extend(attention_unet_source)
+        if "class DeepLabV3Plus" not in source_text:
+            cell['source'].extend(deeplabv3plus_source)
         source_text = "".join(cell['source'])
 
     # 3. Handle model initialization cell (factory)
@@ -274,4 +367,4 @@ nb['cells'] = new_cells
 with open(nb_path, 'w', encoding='utf-8') as f:
     json.dump(nb, f, indent=1)
 
-print("Notebook updated for Attention UNet implementation!")
+print("Notebook updated for DeepLabV3+ implementation!")
