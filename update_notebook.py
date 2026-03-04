@@ -190,6 +190,112 @@ deeplabv3plus_source = [
     "        return F.interpolate(x, size=config['image_size'], mode='bilinear', align_corners=True) if 'config' in globals() else x\n"
 ]
 
+# --- nnU-Net Implementation ---
+nnunet_source = [
+    "\n",
+    "class nnUNet_Style(nn.Module):\n",
+    "    \"\"\"nnU-Net Style UNet with Deep Supervision\"\"\"\n",
+    "    def __init__(self, in_channels=3, out_channels=1, init_features=32):\n",
+    "        super().__init__()\n",
+    "        self.features = init_features\n",
+    "        \n",
+    "        # Encoder\n",
+    "        self.enc1 = DoubleConv(in_channels, init_features)\n",
+    "        self.enc2 = Down(init_features, init_features * 2)\n",
+    "        self.enc3 = Down(init_features * 2, init_features * 4)\n",
+    "        self.enc4 = Down(init_features * 4, init_features * 8)\n",
+    "        self.enc5 = Down(init_features * 8, init_features * 16)\n",
+    "        \n",
+    "        # Decoder\n",
+    "        self.up1 = nn.ConvTranspose2d(init_features * 16, init_features * 8, kernel_size=2, stride=2)\n",
+    "        self.conv1 = DoubleConv(init_features * 16, init_features * 8)\n",
+    "        \n",
+    "        self.up2 = nn.ConvTranspose2d(init_features * 8, init_features * 4, kernel_size=2, stride=2)\n",
+    "        self.conv2 = DoubleConv(init_features * 8, init_features * 4)\n",
+    "        \n",
+    "        self.up3 = nn.ConvTranspose2d(init_features * 4, init_features * 2, kernel_size=2, stride=2)\n",
+    "        self.conv3 = DoubleConv(init_features * 4, init_features * 2)\n",
+    "        \n",
+    "        self.up4 = nn.ConvTranspose2d(init_features * 2, init_features, kernel_size=2, stride=2)\n",
+    "        self.conv4 = DoubleConv(init_features * 2, init_features)\n",
+    "        \n",
+    "        # Final Head\n",
+    "        self.final = nn.Conv2d(init_features, out_channels, kernel_size=1)\n",
+    "        \n",
+    "        # Deep Supervision Heads\n",
+    "        self.ds1 = nn.Conv2d(init_features * 8, out_channels, kernel_size=1)\n",
+    "        self.ds2 = nn.Conv2d(init_features * 4, out_channels, kernel_size=1)\n",
+    "        self.ds3 = nn.Conv2d(init_features * 2, out_channels, kernel_size=1)\n",
+    "        \n",
+    "    def forward(self, x):\n",
+    "        # Encoder\n",
+    "        e1 = self.enc1(x)\n",
+    "        e2 = self.enc2(e1)\n",
+    "        e3 = self.enc3(e2)\n",
+    "        e4 = self.enc4(e3)\n",
+    "        e5 = self.enc5(e4)\n",
+    "        \n",
+    "        # Decoder with Deep Supervision\n",
+    "        d1 = self.up1(e5)\n",
+    "        d1 = torch.cat((e4, d1), dim=1)\n",
+    "        d1 = self.conv1(d1)\n",
+    "        out1 = self.ds1(d1)\n",
+    "        \n",
+    "        d2 = self.up2(d1)\n",
+    "        d2 = torch.cat((e3, d2), dim=1)\n",
+    "        d2 = self.conv2(d2)\n",
+    "        out2 = self.ds2(d2)\n",
+    "        \n",
+    "        d3 = self.up3(d2)\n",
+    "        d3 = torch.cat((e2, d3), dim=1)\n",
+    "        d3 = self.conv3(d3)\n",
+    "        out3 = self.ds3(d3)\n",
+    "        \n",
+    "        d4 = self.up4(d3)\n",
+    "        d4 = torch.cat((e1, d4), dim=1)\n",
+    "        d4 = self.conv4(d4)\n",
+    "        \n",
+    "        out4 = self.final(d4)\n",
+    "        \n",
+    "        if self.training:\n",
+    "            return [out4, out3, out2, out1]\n",
+    "        return out4\n"
+]
+
+# --- Combined Loss Update ---
+combined_loss_source = [
+    "\n",
+    "class CombinedLoss(nn.Module):\n",
+    "    \"\"\"Enhanced Combined Loss with Deep Supervision support\"\"\"\n",
+    "    def __init__(self, dice_weight=0.7, bce_weight=0.3):\n",
+    "        super().__init__()\n",
+    "        self.dice_weight = dice_weight\n",
+    "        self.bce_weight = bce_weight\n",
+    "        self.dice_loss = DiceLoss()\n",
+    "        self.bce_loss = nn.BCEWithLogitsLoss()\n",
+    "        \n",
+    "    def forward(self, outputs, targets):\n",
+    "        if isinstance(outputs, (list, tuple)):\n",
+    "            # Deep Supervision weights (nnU-Net style: 1/2^i)\n",
+    "            weights = [1.0 / (2**i) for i in range(len(outputs))]\n",
+    "            weights = [w / sum(weights) for w in weights]\n",
+    "            \n",
+    "            total_loss = 0\n",
+    "            for output, weight in zip(outputs, weights):\n",
+    "                # Upsample output if needed\n",
+    "                if output.shape[-2:] != targets.shape[-2:]:\n",
+    "                    output = F.interpolate(output, size=targets.shape[-2:], mode='bilinear', align_corners=True)\n",
+    "                \n",
+    "                dice = self.dice_loss(output, targets)\n",
+    "                bce = self.bce_loss(output, targets)\n",
+    "                total_loss += weight * (self.dice_weight * dice + self.bce_weight * bce)\n",
+    "            return total_loss\n",
+    "        else:\n",
+    "            dice = self.dice_loss(outputs, targets)\n",
+    "            bce = self.bce_loss(outputs, targets)\n",
+    "            return self.dice_weight * dice + self.bce_weight * bce\n"
+]
+
 # --- Model Initialization Cell Update ---
 model_init_source = [
     "# Initialize model, loss, optimizer\n",
@@ -214,11 +320,17 @@ model_init_source = [
     "    )\n",
     "elif config.get('model_type') == 'DeepLabV3Plus':\n",
     "    # NOTE: DeepLabV3+ (86.08% Dice) uses ASPP for multi-scale context.\n",
-    "    # It outperforms Attention UNet but falls short of the nested UNet++ accuracy.\n",
     "    model = DeepLabV3Plus(\n",
     "        in_channels=config['in_channels'],\n",
     "        out_channels=config['out_channels'],\n",
     "        init_features=config['init_features']\n",
+    "    )\n",
+    "elif config.get('model_type') == 'nnUNet':\n",
+    "    # NOTE: nnU-Net Style (Phase 4) uses Deep Supervision for multi-scale learning.\n",
+    "    model = nnUNet_Style(\n",
+    "        in_channels=config['in_channels'],\n",
+    "        out_channels=config['out_channels'],\n",
+    "        init_features=32\n",
     "    )\n",
     "else:\n",
     "    # NOTE: Standard UNet is our robust primary baseline model (86.11% Dice).\n",
@@ -233,14 +345,11 @@ model_init_source = [
     "print(f\"Initialized {config.get('model_type', 'UNet')} with {sum(p.numel() for p in model.parameters()):,} parameters\")\n",
     "\n",
     "# --- FINAL PROJECT CONCLUSION ---\n",
-    "# After evaluating 4 architectures on the ISIC 2016 dataset:\n",
-    "# 🏆 WINNER: UNet++ (89.07% Dice) - Most efficient and accurate.\n",
-    "# 🥈 BASELINE: Standard UNet (86.11% Dice) - Robust and reliable.\n",
-    "# 🥉 EXPERIMENTAL: DeepLabV3+ (86.08% Dice) & Attention UNet (85.99% Dice).\n",
+    "# After evaluating all architectures on the ISIC 2016 dataset:\n",
+    "# 🏆 BEST PREDICTION: UNet++ (Winner so far) vs nnU-Net (Modern SOTA).\n",
     "print(\"-\" * 60)\n",
     "print(\"🏁 COMPARATIVE ANALYSIS CONCLUSION:\")\n",
-    "print(\"UNet++ is the superior model for this task, providing the highest accuracy\")\n",
-    "print(\"with significantly lower parameter counts than the standard UNet.\")\n",
+    "print(\"We are testing if nnU-Net Style (Deep Supervision) can beat UNet++.\")\n",
     "print(\"-\" * 60)\n",
     "\n",
     "criterion = CombinedLoss(\n",
@@ -332,18 +441,25 @@ new_cells = []
 for cell in nb['cells']:
     source_text = "".join(cell['source'])
     
-    # 1. Update Config to DeepLabV3Plus
-    if "'model_type': 'AttentionUNet'" in source_text or "'model_type': 'UNetPlusPlus'" in source_text or "'model_type': 'UNet'" in source_text:
-        cell['source'] = [line.replace("'model_type': 'AttentionUNet'", "'model_type': 'DeepLabV3Plus'").replace("'model_type': 'UNetPlusPlus'", "'model_type': 'DeepLabV3Plus'").replace("'model_type': 'UNet'", "'model_type': 'DeepLabV3Plus'") for line in cell['source']]
+    # 1. Update Config to nnUNet
+    if any(m in source_text for m in ["'model_type': 'AttentionUNet'", "'model_type': 'UNetPlusPlus'", "'model_type': 'UNet'", "'model_type': 'DeepLabV3Plus'"]):
+        cell['source'] = [line.replace("'model_type': 'AttentionUNet'", "'model_type': 'nnUNet'").replace("'model_type': 'UNetPlusPlus'", "'model_type': 'nnUNet'").replace("'model_type': 'UNet'", "'model_type': 'nnUNet'").replace("'model_type': 'DeepLabV3Plus'", "'model_type': 'nnUNet'") for line in cell['source']]
         source_text = "".join(cell['source'])
 
-    # 2. Inject Attention UNet and DeepLabV3+ classes into Model Definition Cell
+    # 2. Inject Model classes into Model Definition Cell
     if "class UNetPlusPlus" in source_text:
         # Check if already injected
         if "class AttentionUNet" not in source_text:
             cell['source'].extend(attention_unet_source)
         if "class DeepLabV3Plus" not in source_text:
             cell['source'].extend(deeplabv3plus_source)
+        if "class nnUNet_Style" not in source_text:
+            cell['source'].extend(nnunet_source)
+        source_text = "".join(cell['source'])
+
+    # 2b. Inject Enhanced CombinedLoss
+    if "class CombinedLoss" in source_text:
+        cell['source'] = combined_loss_source
         source_text = "".join(cell['source'])
 
     # 3. Handle model initialization cell (factory)
@@ -379,4 +495,4 @@ nb['cells'] = new_cells
 with open(nb_path, 'w', encoding='utf-8') as f:
     json.dump(nb, f, indent=1)
 
-print("Notebook updated for DeepLabV3+ implementation!")
+print("Notebook updated for nnU-Net Style implementation!")
