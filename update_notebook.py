@@ -257,9 +257,11 @@ model_init_source = [
     "    y = model(x)\n",
     "    if isinstance(y, list): y = y[-1]\n",
     "print(f\"Input: {x.shape} \\u2192 Output: {y.shape}\")\n",
-    "print(\"\\u2713 Model working!\")\n",
-    "\n",
-    "\n",
+    "print(\"\\u2713 Model working!\")\n"
+]
+
+# --- Training Loop Restore ---
+training_loop_source = [
     "# Main training loop\n",
     "best_val_loss = float('inf')\n",
     "patience_counter = 0\n",
