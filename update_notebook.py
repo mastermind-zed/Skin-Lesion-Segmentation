@@ -187,7 +187,7 @@ deeplabv3plus_source = [
     "        x = self.cat_conv(x)\n",
     "        x = self.final_conv(x)\n",
     "        \n",
-    "        return F.interpolate(x, size=image_size, mode='bilinear', align_corners=True) if 'image_size' in globals() else x\n"
+    "        return F.interpolate(x, size=config['image_size'], mode='bilinear', align_corners=True) if 'config' in globals() else x\n"
 ]
 
 # --- Model Initialization Cell Update ---
