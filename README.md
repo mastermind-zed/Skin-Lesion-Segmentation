@@ -121,13 +121,13 @@ The chart below visualizes the model's training journey over 150 epochs.
 
 Evaluation on the **379 Test Images**:
 
-| Metric | Standard UNet | **UNet++** | **Attention UNet** |
-| :--- | :--- | :--- | :--- |
-| **Dice Coefficient** | 86.11% | **89.07%** | 85.99% |
-| **IoU (Jaccard Index)** | 76.43% | **80.94%** | 76.31% |
-| **Pixel Accuracy** | 92.82% | **94.23%** | 92.84% |
-| **Precision** | 88.68% | **90.91%** | 88.67% |
-| **Recall** | 85.43% | **88.37%** | 85.50% |
+| Metric | Standard UNet | **UNet++** | Attention UNet | **DeepLabV3+** |
+| :--- | :--- | :--- | :--- | :--- |
+| **Dice Coefficient** | 86.11% | **89.07%** | 85.99% | 86.08% |
+| **IoU (Jaccard Index)** | 76.43% | **80.94%** | 76.31% | 76.40% |
+| **Pixel Accuracy** | 92.82% | **94.23%** | 92.84% | 92.81% |
+| **Precision** | 88.68% | **90.91%** | 88.67% | 89.15% |
+| **Recall** | 85.43% | **88.37%** | 85.50% | 84.82% |
 
 > [!NOTE]
 > **Attention UNet Performance:** The Attention UNet achieved a **85.99% Dice score**, performing similarly to the Standard UNet baseline. While the Attention Gates help focus on saliency, the nested architecture of UNet++ remains the most effective for this dataset.
@@ -153,9 +153,9 @@ In this section, we track the performance of various architectures on the ISIC 2
 | Architecture | Dice Coeff | IoU | Parameters | Performance |
 | :--- | :--- | :--- | :--- | :--- |
 | **Standard UNet** (f=64) [Primary] | 86.11% | 76.43% | **28,948,673** | Foundational Baseline |
-| **UNet++ (Nested)** (f=32) | **89.07%** | **80.94%** | **9.1M** | ✅ Highest Accuracy (Winner) |
-| **Attention UNet** (f=64) | 85.99% | 76.31% | **29,298,538** | ✅ High Saliency Focus |
-| DeepLabV3+ | - | - | - | 📅 Planned |
+| **UNet++ (Nested)** (f=32) | **89.07%** | **80.94%** | **9.1M** | 🏆 **Project Winner (Highest Accuracy)** |
+| **Attention UNet** (f=32) | 85.99% | 76.31% | 29,298,538 | ✅ High Saliency Focus |
+| **DeepLabV3+** | 86.08% | 76.40% | ~11.2M | ✅ Multi-scale Context (ASPP) |
 
 ---
 
@@ -166,8 +166,9 @@ The comparative analysis reveals a significant architectural advantage for the *
 1.  **Standard UNet (Primary):** Featuring **28,948,673 parameters**, this model provides a reliable and high-performance baseline. It demonstrates excellent stability and sets a benchmark that surpasses many early segmentation architectures.
 2.  **Efficiency vs. Scale:** While the Standard UNet uses 28.9M parameters to achieve its 86.11% Dice score, the **UNet++** (Nested) achieves a superior **89.07%** using only **9.1M parameters**. This makes UNet++ **3.16x more parameter-efficient**.
 3.  **Boundary Precision:** Visual analysis indicates that the Nested skip connections in UNet++ reduce semantic gaps compared to the Standard UNet, leading to sharper boundaries and higher IoU (+4.51% gain).
-4.  **Attention Mechanism:** The **Attention UNet** (85.99% Dice) utilized Attention Gates to suppress irrelevant background noise. While scientifically interesting, it produced results comparable to the Standard UNet, suggesting that for skin lesions, spatial nesting (UNet++) is more impactful than weighted gating.
-5.  **Benchmark Leader:** UNet++ currently stands as the performance leader for precision-critical dermatoscopic analysis in this project.
+4.  **Attention Mechanism:** The **Attention UNet** (85.99% Dice) utilized Attention Gates to suppress irrelevant background noise. While scientifically interesting, it produced results comparable to the Standard UNet baseline.
+5.  **Multi-Scale Integration:** **DeepLabV3+** (86.08% Dice) leveraged ASPP to capture multi-scale context. It performed slightly better than Attention UNet but ultimately did not surpass the dense structural integration of UNet++.
+6.  **Ultimate Project Winner:** **UNet++** currently stands as the definitive performance leader, proving that nested skip connections are the most effective strategy for the ISIC 2016 skin lesion segmentation task.
 
 ---
 
