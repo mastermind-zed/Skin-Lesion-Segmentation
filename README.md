@@ -23,7 +23,7 @@ This project focuses on the automated segmentation of skin lesions from dermatos
 
 ## 🛠 Resources & Requirements
 
-### Dataset: ISIC 2016
+### Dataset: ISIC 2016mm
 We use the Challenge Part 1 (Segmentation) data from the [International Skin Imaging Collaboration (ISIC)](https://challenge.isic-archive.com/landing/2016/).
 - **Train:** 900 images (80/20 split used for Val).
 - **Test:** 379 official challenge test images.
