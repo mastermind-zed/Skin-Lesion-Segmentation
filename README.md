@@ -1,6 +1,6 @@
 # Skin Lesion Segmentation: Deep Learning with UNet
 
-## 📋 Table of Contents..
+## 📋 Table of Contents.
 1. [Project Overview](#-project-overview)
 2. [Resources & Requirements](#-resources--requirements)
 3. [Project Setup](#-project-setup)
