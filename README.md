@@ -193,5 +193,3 @@ The project includes a dedicated pipeline for user-uploaded images. This simulat
 
 ### 🔬 Final Evaluation (Test Set Results)
 The model's segmentation capability is further demonstrated in the grid below, showcasing consistent performance across various lesion types in the test set.
-
----
