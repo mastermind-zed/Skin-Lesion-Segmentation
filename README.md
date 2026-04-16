@@ -195,4 +195,3 @@ The project includes a dedicated pipeline for user-uploaded images. This simulat
 The model's segmentation capability is further demonstrated in the grid below, showcasing consistent performance across various lesion types in the test set.
 
 ---
-*Developed by mastermind-zed as part of the Skin Lesion Research.*
