@@ -192,4 +192,4 @@ The project includes a dedicated pipeline for user-uploaded images. This simulat
 <img src="assets/inference_sample.png" width="600" alt="Inference Sample">
 
 ### 🔬 Final Evaluation (Test Set Results)
-The model's segmentation capability is further demonstrated in the grid below, showcasing consistent performance across various lesion types in the test set.
+The model's segmentation capability is further demonstrated in the grid below, showcasing consistent performance across various lesion types in the test set.d
